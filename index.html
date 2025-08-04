@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AltureCam – Prendre une photo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="camera">
+  <video id="camera" autoplay playsinline></video>
+  <div class="controls">
+    <button id="switch-camera">🔄</button>
+    <button id="take-photo">📸</button>
+    <a href="index.html" class="btn small">⬅️ Galerie</a>
+  </div>
+  <canvas id="snapshot" style="display: none;"></canvas>
+
+  <script>
+    let currentStream;
+    let usingFrontCamera = false;
+
+    const video = document.getElementById("camera");
+
+    function startCamera() {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+
+      const constraints = {
+        video: { facingMode: usingFrontCamera ? "user" : "environment" }
+      };
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
+          currentStream = stream;
+          video.srcObject = stream;
+        })
+        .catch(err => {
+          alert("Erreur : " + err.message);
+        });
+    }
+
+    document.getElementById("take-photo").addEventListener("click", () => {
+      const canvas = document.getElementById("snapshot");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const dataURL = canvas.toDataURL("image/png");
+      const photos = JSON.parse(localStorage.getItem("photos") || "[]");
+      photos.push({ id: Date.now(), data: dataURL });
+      localStorage.setItem("photos", JSON.stringify(photos));
+
+      alert("📸 Photo enregistrée !");
+    });
+
+    document.getElementById("switch-camera").addEventListener("click", () => {
+      usingFrontCamera = !usingFrontCamera;
+      startCamera();
+    });
+
+    startCamera();
+  </script>
+</body>
+</html>
